@@ -17,14 +17,20 @@ import (
 func main() {
 	godotenv.Load(".env")
 	dbURL := os.Getenv("DB_URL")
+	platform := os.Getenv("PLATFORM")
+
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		fmt.Printf("Error opening database: %s", err)
 		return
 	}
-
 	dbQueries := database.New(db)
-	apiCfg := &config.APIConfig{DB: dbQueries}
+
+	apiCfg := &config.APIConfig{
+		DB:       dbQueries,
+		Platform: platform,
+	}
+
 	cfgHandlers := handlers.NewAPIHandler(apiCfg)
 
 	mux := http.NewServeMux()
@@ -35,8 +41,9 @@ func main() {
 
 	mux.HandleFunc("GET /api/healthz", handlers.HealthHandler)
 	mux.HandleFunc("GET /admin/metrics", cfgHandlers.HitHandler)
-	mux.HandleFunc("POST /admin/reset", cfgHandlers.ResetHandler)
+	mux.HandleFunc("POST /admin/reset", cfgHandlers.DeleteUsersHandler)
 	mux.HandleFunc("POST /api/validate_chirp", cfgHandlers.ValidateHandler)
+	mux.HandleFunc("POST /api/users", cfgHandlers.CreateUserHandler)
 
 	appReqPath := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
 	mux.Handle("/app/", cfgHandlers.MiddlewareMetricsInc(appReqPath))

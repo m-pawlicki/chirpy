@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -32,9 +31,7 @@ func (apiCfg *APIHandler) ValidateHandler(w http.ResponseWriter, r *http.Request
 
 	err := decoder.Decode(&params)
 	if err != nil {
-		log.Printf("Error decoding parameters: %s", err)
-		w.WriteHeader(500)
-		return
+		RespondWithError(w, 500, err.Error())
 	}
 
 	if len(params.Body) > 140 {
