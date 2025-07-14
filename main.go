@@ -2,41 +2,10 @@ package main
 
 import (
 	"net/http"
-	"strconv"
-	"sync/atomic"
+
+	"github.com/m-pawlicki/chirpy/handlers"
+	"github.com/m-pawlicki/chirpy/internal/config"
 )
-
-type apiConfig struct {
-	fileserverHits atomic.Int32
-}
-
-func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cfg.fileserverHits.Add(int32(1))
-		next.ServeHTTP(w, r)
-	})
-}
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
-}
-
-func (cfg *apiConfig) hitHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	hits := int(cfg.fileserverHits.Load())
-	out := "Hits: " + strconv.Itoa(hits)
-	w.Write([]byte(out))
-}
-
-func (cfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
-	cfg.fileserverHits.Store(0)
-}
 
 func main() {
 	mux := http.NewServeMux()
@@ -45,14 +14,15 @@ func main() {
 		Handler: mux,
 	}
 
-	apiCfg := &apiConfig{}
+	apiCfg := &config.APIConfig{}
+	apiHandlers := handlers.NewAPIHandler(apiCfg)
 
-	mux.HandleFunc("GET /api/healthz", healthHandler)
-	mux.HandleFunc("GET /api/metrics", apiCfg.hitHandler)
-	mux.HandleFunc("POST /api/reset", apiCfg.resetHandler)
+	mux.HandleFunc("GET /api/healthz", handlers.HealthHandler)
+	mux.HandleFunc("GET /admin/metrics", apiHandlers.HitHandler)
+	mux.HandleFunc("POST /admin/reset", apiHandlers.ResetHandler)
 
 	appReqPath := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
-	mux.Handle("/app/", apiCfg.middlewareMetricsInc(appReqPath))
+	mux.Handle("/app/", apiHandlers.MiddlewareMetricsInc(appReqPath))
 
 	server.ListenAndServe()
 }
