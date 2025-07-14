@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -30,30 +29,23 @@ func (apiCfg *APIHandler) ValidateHandler(w http.ResponseWriter, r *http.Request
 
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
 
+	err := decoder.Decode(&params)
 	if err != nil {
 		log.Printf("Error decoding parameters: %s", err)
 		w.WriteHeader(500)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-
 	if len(params.Body) > 140 {
+
 		tooLongResp := struct {
 			Err string `json:"error"`
 		}{
 			Err: "Chirp is too long",
 		}
-		errBody, err := json.Marshal(tooLongResp)
-		if err != nil {
-			fmt.Printf("Error marshalling JSON: %s", err)
-			w.WriteHeader(500)
-			return
-		}
-		w.WriteHeader(400)
-		w.Write(errBody)
+
+		RespondWithJSON(w, 400, tooLongResp)
 		return
 	}
 
@@ -64,13 +56,6 @@ func (apiCfg *APIHandler) ValidateHandler(w http.ResponseWriter, r *http.Request
 	}{
 		Cleaned: cleanedBody,
 	}
-	clean, err := json.Marshal(cleanChirp)
-	if err != nil {
-		fmt.Printf("Error marshalling JSON: %s", err)
-		w.WriteHeader(500)
-		return
-	}
-	w.WriteHeader(200)
-	w.Write(clean)
-	return
+
+	RespondWithJSON(w, 200, cleanChirp)
 }

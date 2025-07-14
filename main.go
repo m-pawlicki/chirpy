@@ -3,8 +3,8 @@ package main
 import (
 	"net/http"
 
-	"github.com/m-pawlicki/chirpy/handlers"
 	"github.com/m-pawlicki/chirpy/internal/config"
+	"github.com/m-pawlicki/chirpy/internal/handlers"
 )
 
 func main() {
