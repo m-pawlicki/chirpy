@@ -15,14 +15,15 @@ func main() {
 	}
 
 	apiCfg := &config.APIConfig{}
-	apiHandlers := handlers.NewAPIHandler(apiCfg)
+	cfgHandlers := handlers.NewAPIHandler(apiCfg)
 
 	mux.HandleFunc("GET /api/healthz", handlers.HealthHandler)
-	mux.HandleFunc("GET /admin/metrics", apiHandlers.HitHandler)
-	mux.HandleFunc("POST /admin/reset", apiHandlers.ResetHandler)
+	mux.HandleFunc("GET /admin/metrics", cfgHandlers.HitHandler)
+	mux.HandleFunc("POST /admin/reset", cfgHandlers.ResetHandler)
+	mux.HandleFunc("POST /api/validate_chirp", cfgHandlers.ValidateHandler)
 
 	appReqPath := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
-	mux.Handle("/app/", apiHandlers.MiddlewareMetricsInc(appReqPath))
+	mux.Handle("/app/", cfgHandlers.MiddlewareMetricsInc(appReqPath))
 
 	server.ListenAndServe()
 }
