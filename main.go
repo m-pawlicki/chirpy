@@ -5,6 +5,8 @@ import (
 
 	"github.com/m-pawlicki/chirpy/internal/config"
 	"github.com/m-pawlicki/chirpy/internal/handlers"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
