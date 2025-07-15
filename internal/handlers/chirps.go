@@ -20,7 +20,7 @@ func checkProfanity(body string) string {
 	return cleaned
 }
 
-func (apiCfg *APIHandler) ValidateHandler(w http.ResponseWriter, r *http.Request) {
+func (apiCfg *APIHandler) ValidateChirpHandler(w http.ResponseWriter, r *http.Request) {
 
 	type parameters struct {
 		Body string `json:"body"`

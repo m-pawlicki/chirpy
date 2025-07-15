@@ -10,6 +10,7 @@ import (
 	"github.com/m-pawlicki/chirpy/internal/config"
 	"github.com/m-pawlicki/chirpy/internal/database"
 	"github.com/m-pawlicki/chirpy/internal/handlers"
+	"github.com/m-pawlicki/chirpy/internal/middleware"
 
 	_ "github.com/lib/pq"
 )
@@ -32,6 +33,7 @@ func main() {
 	}
 
 	cfgHandlers := handlers.NewAPIHandler(apiCfg)
+	cfgMiddleware := middleware.NewAPIMiddleware(apiCfg)
 
 	mux := http.NewServeMux()
 	server := http.Server{
@@ -42,11 +44,11 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", handlers.HealthHandler)
 	mux.HandleFunc("GET /admin/metrics", cfgHandlers.HitHandler)
 	mux.HandleFunc("POST /admin/reset", cfgHandlers.DeleteUsersHandler)
-	mux.HandleFunc("POST /api/validate_chirp", cfgHandlers.ValidateHandler)
+	mux.HandleFunc("POST /api/validate_chirp", cfgHandlers.ValidateChirpHandler)
 	mux.HandleFunc("POST /api/users", cfgHandlers.CreateUserHandler)
 
 	appReqPath := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
-	mux.Handle("/app/", cfgHandlers.MiddlewareMetricsInc(appReqPath))
+	mux.Handle("/app/", cfgMiddleware.MiddlewareMetricsInc(appReqPath))
 
 	server.ListenAndServe()
 }
