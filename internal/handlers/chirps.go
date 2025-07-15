@@ -32,6 +32,21 @@ func (apiCfg *APIHandler) GetChirpsHandler(w http.ResponseWriter, r *http.Reques
 	RespondWithJSON(w, 200, chirpList)
 }
 
+func (apiCfg *APIHandler) GetChirpByIDHandler(w http.ResponseWriter, r *http.Request) {
+	pathVal := r.PathValue("chirpID")
+	chirpID, err := uuid.Parse(pathVal)
+	if err != nil {
+		RespondWithError(w, 400, "Invalid ID")
+		return
+	}
+	chirp, err := apiCfg.Config.DB.GetChirpByID(r.Context(), chirpID)
+	if err != nil {
+		RespondWithError(w, 404, "Chirp not found")
+		return
+	}
+	RespondWithJSON(w, 200, Chirp{ID: chirp.ID, CreatedAt: chirp.CreatedAt, UpdatedAt: chirp.UpdatedAt, Body: chirp.Body, UserID: chirp.UserID})
+}
+
 func (apiCfg *APIHandler) PostChirpHandler(w http.ResponseWriter, r *http.Request) {
 	type payload struct {
 		Body   string    `json:"body"`
