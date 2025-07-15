@@ -44,7 +44,7 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", handlers.HealthHandler)
 	mux.HandleFunc("GET /admin/metrics", cfgHandlers.HitHandler)
 	mux.HandleFunc("POST /admin/reset", cfgHandlers.DeleteUsersHandler)
-	mux.HandleFunc("POST /api/validate_chirp", cfgHandlers.ValidateChirpHandler)
+	mux.HandleFunc("POST /api/chirps", cfgHandlers.PostChirpHandler)
 	mux.HandleFunc("POST /api/users", cfgHandlers.CreateUserHandler)
 
 	appReqPath := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
