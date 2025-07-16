@@ -41,3 +41,9 @@ func TestTokenExpired(t *testing.T) {
 		t.Errorf("expected expired token error but got nil instead")
 	}
 }
+
+func TestBearerToken(t *testing.T) {
+}
+
+func TestEmptyAuthHead(t *testing.T) {
+}

@@ -3,10 +3,13 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/joho/godotenv"
+	"github.com/m-pawlicki/chirpy/internal/auth"
 	"github.com/m-pawlicki/chirpy/internal/database"
 )
 
@@ -49,32 +52,42 @@ func (apiCfg *APIHandler) GetChirpByIDHandler(w http.ResponseWriter, r *http.Req
 
 func (apiCfg *APIHandler) PostChirpHandler(w http.ResponseWriter, r *http.Request) {
 	type payload struct {
-		Body   string    `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
 	}
-
+	godotenv.Load(".env")
+	secret := os.Getenv("SECRET")
 	decoder := json.NewDecoder(r.Body)
 	pl := payload{}
 	err := decoder.Decode(&pl)
 	if err != nil {
-		RespondWithError(w, 500, err.Error())
+		RespondWithError(w, 500, "Couldn't decode body")
 		return
 	}
-	chirpBody, isValid := validateChirp(pl.Body)
-	if isValid {
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		RespondWithError(w, 401, "Unauthorized")
+		return
+	}
+	jwtUsr, err := auth.ValidateJWT(token, secret)
+	if err != nil {
+		RespondWithError(w, 401, "Unauthorized")
+		return
+	}
+
+	chirpBody, isValidChirp := validateChirp(pl.Body)
+	if isValidChirp {
 		newChirp := database.CreateChirpParams{
 			Body:   chirpBody,
-			UserID: pl.UserID,
+			UserID: jwtUsr,
 		}
 		res, err := apiCfg.Config.DB.CreateChirp(r.Context(), newChirp)
 		if err != nil {
 			RespondWithError(w, 500, err.Error())
 			return
-		} else {
-			RespondWithJSON(w, 201, Chirp{ID: res.ID, CreatedAt: res.CreatedAt, UpdatedAt: res.UpdatedAt, Body: res.Body, UserID: res.UserID})
-			return
 		}
-
+		RespondWithJSON(w, 201, Chirp{ID: res.ID, CreatedAt: res.CreatedAt, UpdatedAt: res.UpdatedAt, Body: res.Body, UserID: res.UserID})
+		return
 	} else {
 		RespondWithError(w, 400, "Chirp is too long")
 		return

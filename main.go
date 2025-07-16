@@ -19,6 +19,7 @@ func main() {
 	godotenv.Load(".env")
 	dbURL := os.Getenv("DB_URL")
 	platform := os.Getenv("PLATFORM")
+	secret := os.Getenv("SECRET")
 
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
@@ -30,6 +31,7 @@ func main() {
 	apiCfg := &config.APIConfig{
 		DB:       dbQueries,
 		Platform: platform,
+		Secret:   secret,
 	}
 
 	cfgHandlers := handlers.NewAPIHandler(apiCfg)
