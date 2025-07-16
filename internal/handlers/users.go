@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/m-pawlicki/chirpy/internal/auth"
+	"github.com/m-pawlicki/chirpy/internal/database"
 )
 
 type User struct {
@@ -17,38 +19,75 @@ type User struct {
 
 func (apiCfg *APIHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
-	type parameters struct {
-		Email string `json:"email"`
+	type payload struct {
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	params := parameters{}
-	err := decoder.Decode(&params)
+	pl := payload{}
+	err := decoder.Decode(&pl)
 	if err != nil {
 		RespondWithError(w, 500, err.Error())
 		return
 	}
 
-	user, err := apiCfg.Config.DB.CreateUser(r.Context(), params.Email)
+	hash, err := auth.HashPassword(pl.Password)
 	if err != nil {
 		RespondWithError(w, 500, err.Error())
+		return
+	}
+
+	userParams := database.CreateUserParams{
+		Email:          pl.Email,
+		HashedPassword: hash,
+	}
+
+	user, err := apiCfg.Config.DB.CreateUser(r.Context(), userParams)
+	if err != nil {
+		RespondWithError(w, 500, err.Error())
+		return
 	} else {
 		RespondWithJSON(w, 201, User{ID: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email})
 	}
 }
 
-func (apiCfg *APIHandler) DeleteUsersHandler(w http.ResponseWriter, r *http.Request) {
-
+func (apiCfg *APIHandler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	type response struct {
-		Body string `json:"body"`
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
+
+	decoder := json.NewDecoder(r.Body)
+	resp := response{}
+	err := decoder.Decode(&resp)
+	if err != nil {
+		RespondWithError(w, 500, err.Error())
+		return
+	}
+
+	usr, err := apiCfg.Config.DB.FindUserByEmail(r.Context(), resp.Email)
+	if err != nil {
+		RespondWithError(w, 401, "Incorrect email or password")
+		return
+	}
+
+	err = auth.CheckPasswordHash(resp.Password, usr.HashedPassword)
+	if err != nil {
+		RespondWithError(w, 401, "Incorrect email or password")
+		return
+	}
+	RespondWithJSON(w, 200, User{ID: usr.ID, CreatedAt: usr.CreatedAt, UpdatedAt: usr.UpdatedAt, Email: usr.Email})
+}
+
+func (apiCfg *APIHandler) DeleteUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 	if apiCfg.Config.Platform == "dev" {
 		err := apiCfg.Config.DB.DeleteUsers(r.Context())
 		if err != nil {
 			RespondWithError(w, 500, err.Error())
 		} else {
-			RespondWithJSON(w, 200, response{Body: "Users reset."})
+			RespondWithMsg(w, 200, "Users reset")
 		}
 	} else {
 		RespondWithError(w, 403, "Forbidden")

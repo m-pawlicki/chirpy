@@ -51,6 +51,7 @@ func main() {
 	mux.HandleFunc("GET /api/chirps/{chirpID}", cfgHandlers.GetChirpByIDHandler)
 
 	mux.HandleFunc("POST /api/users", cfgHandlers.CreateUserHandler)
+	mux.HandleFunc("POST /api/login", cfgHandlers.LoginUserHandler)
 
 	appReqPath := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
 	mux.Handle("/app/", cfgMiddleware.MiddlewareMetricsInc(appReqPath))

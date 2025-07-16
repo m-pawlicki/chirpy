@@ -20,7 +20,13 @@ func NewAPIHandler(cfg *config.APIConfig) *APIHandler {
 
 func RespondWithError(w http.ResponseWriter, code int, msg string) {
 	w.WriteHeader(code)
-	fmt.Printf("Error: %s", msg)
+	err := "Error: " + msg
+	w.Write([]byte(err))
+}
+
+func RespondWithMsg(w http.ResponseWriter, code int, msg string) {
+	w.WriteHeader(code)
+	w.Write([]byte(msg))
 }
 
 func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
