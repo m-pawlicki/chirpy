@@ -119,6 +119,44 @@ func validateChirp(body string) (string, bool) {
 	return cleanedBody, true
 }
 
-func (apiCfg *APIHandler) DeleteChirpHandler(w http.ResponseWriter, r *http.Request) {
+func (apiCfg *APIHandler) DeleteChirpByIDHandler(w http.ResponseWriter, r *http.Request) {
+	godotenv.Load(".env")
+	secret := os.Getenv("SECRET")
+	pathVal := r.PathValue("chirpID")
 
+	chirpID, err := uuid.Parse(pathVal)
+	if err != nil {
+		RespondWithError(w, 400, "Invalid ID")
+		return
+	}
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		RespondWithError(w, 401, "Unauthorized")
+		return
+	}
+	usr, err := auth.ValidateJWT(token, secret)
+	if err != nil {
+		RespondWithError(w, 401, "Unauthorized")
+		return
+	}
+
+	chirp, err := apiCfg.Config.DB.GetChirpByID(r.Context(), chirpID)
+	if err != nil {
+		RespondWithError(w, 404, "Chirp not found")
+		return
+	}
+
+	if chirp.UserID != usr {
+		RespondWithError(w, 403, "Unauthorized")
+		return
+	}
+
+	err = apiCfg.Config.DB.DeleteChirpByID(r.Context(), chirpID)
+	if err != nil {
+		RespondWithError(w, 500, err.Error())
+		return
+	}
+
+	RespondWithMsg(w, 204, "")
 }
