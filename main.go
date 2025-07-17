@@ -60,6 +60,8 @@ func main() {
 	mux.HandleFunc("POST /api/refresh", cfgHandlers.RefreshAccessTokenHandler)
 	mux.HandleFunc("POST /api/revoke", cfgHandlers.RevokeTokenHandler)
 
+	mux.HandleFunc("POST /api/polka/webhooks", cfgHandlers.UpgradeUserToRedHandler)
+
 	appReqPath := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
 	mux.Handle("/app/", cfgMiddleware.MiddlewareMetricsInc(appReqPath))
 

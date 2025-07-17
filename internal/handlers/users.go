@@ -19,6 +19,7 @@ type User struct {
 	Email        string    `json:"email"`
 	Token        string    `json:"token"`
 	RefreshToken string    `json:"refresh_token"`
+	IsChirpyRed  bool      `json:"is_chirpy_red"`
 }
 
 func (apiCfg *APIHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +53,7 @@ func (apiCfg *APIHandler) CreateUserHandler(w http.ResponseWriter, r *http.Reque
 		RespondWithError(w, 500, err.Error())
 		return
 	} else {
-		RespondWithJSON(w, 201, User{ID: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email})
+		RespondWithJSON(w, 201, User{ID: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email, IsChirpyRed: user.IsChirpyRed})
 	}
 }
 
@@ -103,7 +104,7 @@ func (apiCfg *APIHandler) LoginUserHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	RespondWithJSON(w, 200, User{ID: usr.ID, CreatedAt: usr.CreatedAt, UpdatedAt: usr.UpdatedAt, Email: usr.Email, Token: token, RefreshToken: rt.Token})
+	RespondWithJSON(w, 200, User{ID: usr.ID, CreatedAt: usr.CreatedAt, UpdatedAt: usr.UpdatedAt, Email: usr.Email, Token: token, RefreshToken: rt.Token, IsChirpyRed: usr.IsChirpyRed})
 }
 
 func (apiCfg *APIHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -154,7 +155,7 @@ func (apiCfg *APIHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	RespondWithJSON(w, 200, User{ID: updatedUser.ID, CreatedAt: updatedUser.CreatedAt, UpdatedAt: updatedUser.UpdatedAt, Email: updatedUser.Email, Token: token, RefreshToken: refreshToken.Token})
+	RespondWithJSON(w, 200, User{ID: updatedUser.ID, CreatedAt: updatedUser.CreatedAt, UpdatedAt: updatedUser.UpdatedAt, Email: updatedUser.Email, Token: token, RefreshToken: refreshToken.Token, IsChirpyRed: updatedUser.IsChirpyRed})
 }
 
 func (apiCfg *APIHandler) DeleteUsersHandler(w http.ResponseWriter, r *http.Request) {
