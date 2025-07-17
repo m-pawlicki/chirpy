@@ -3,11 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 	"github.com/m-pawlicki/chirpy/internal/auth"
 	"github.com/m-pawlicki/chirpy/internal/database"
 )
@@ -64,8 +62,7 @@ func (apiCfg *APIHandler) LoginUserHandler(w http.ResponseWriter, r *http.Reques
 		Email    string `json:"email"`
 	}
 
-	godotenv.Load(".env")
-	secret := os.Getenv("SECRET")
+	secret := apiCfg.Config.Secret
 	decoder := json.NewDecoder(r.Body)
 	resp := response{}
 	err := decoder.Decode(&resp)
@@ -108,8 +105,8 @@ func (apiCfg *APIHandler) LoginUserHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (apiCfg *APIHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
-	godotenv.Load(".env")
-	secret := os.Getenv("SECRET")
+
+	secret := apiCfg.Config.Secret
 	type response struct {
 		Password string `json:"password"`
 		Email    string `json:"email"`

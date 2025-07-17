@@ -3,12 +3,10 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 	"github.com/m-pawlicki/chirpy/internal/auth"
 	"github.com/m-pawlicki/chirpy/internal/database"
 )
@@ -54,8 +52,7 @@ func (apiCfg *APIHandler) PostChirpHandler(w http.ResponseWriter, r *http.Reques
 	type payload struct {
 		Body string `json:"body"`
 	}
-	godotenv.Load(".env")
-	secret := os.Getenv("SECRET")
+	secret := apiCfg.Config.Secret
 	decoder := json.NewDecoder(r.Body)
 	pl := payload{}
 	err := decoder.Decode(&pl)
@@ -120,8 +117,7 @@ func validateChirp(body string) (string, bool) {
 }
 
 func (apiCfg *APIHandler) DeleteChirpByIDHandler(w http.ResponseWriter, r *http.Request) {
-	godotenv.Load(".env")
-	secret := os.Getenv("SECRET")
+	secret := apiCfg.Config.Secret
 	pathVal := r.PathValue("chirpID")
 
 	chirpID, err := uuid.Parse(pathVal)

@@ -2,10 +2,8 @@ package handlers
 
 import (
 	"net/http"
-	"os"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/m-pawlicki/chirpy/internal/auth"
 )
 
@@ -15,8 +13,7 @@ func (apiCfg *APIHandler) RefreshAccessTokenHandler(w http.ResponseWriter, r *ht
 		Token string `json:"token"`
 	}
 
-	godotenv.Load(".env")
-	secret := os.Getenv("SECRET")
+	secret := apiCfg.Config.Secret
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		RespondWithError(w, 401, err.Error())

@@ -20,6 +20,7 @@ func main() {
 	dbURL := os.Getenv("DB_URL")
 	platform := os.Getenv("PLATFORM")
 	secret := os.Getenv("SECRET")
+	apiKey := os.Getenv("POLKA_KEY")
 
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
@@ -32,6 +33,7 @@ func main() {
 		DB:       dbQueries,
 		Platform: platform,
 		Secret:   secret,
+		APIKey:   apiKey,
 	}
 
 	cfgHandlers := handlers.NewAPIHandler(apiCfg)

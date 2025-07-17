@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/m-pawlicki/chirpy/internal/auth"
 )
 
 func (apiCfg *APIHandler) UpgradeUserToRedHandler(w http.ResponseWriter, r *http.Request) {
@@ -14,9 +15,19 @@ func (apiCfg *APIHandler) UpgradeUserToRedHandler(w http.ResponseWriter, r *http
 			UserID string `json:"user_id"`
 		} `json:"data"`
 	}
+
+	key, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		RespondWithError(w, 401, err.Error())
+		return
+	}
+	if key != apiCfg.Config.APIKey {
+		RespondWithError(w, 401, "Unauthorized")
+		return
+	}
 	decoder := json.NewDecoder(r.Body)
 	resp := response{}
-	err := decoder.Decode(&resp)
+	err = decoder.Decode(&resp)
 	if err != nil {
 		RespondWithMsg(w, 500, "")
 		return
