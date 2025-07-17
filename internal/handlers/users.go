@@ -106,6 +106,57 @@ func (apiCfg *APIHandler) LoginUserHandler(w http.ResponseWriter, r *http.Reques
 	RespondWithJSON(w, 200, User{ID: usr.ID, CreatedAt: usr.CreatedAt, UpdatedAt: usr.UpdatedAt, Email: usr.Email, Token: token, RefreshToken: rt.Token})
 }
 
+func (apiCfg *APIHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+	godotenv.Load(".env")
+	secret := os.Getenv("SECRET")
+	type response struct {
+		Password string `json:"password"`
+		Email    string `json:"email"`
+	}
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		RespondWithError(w, 401, err.Error())
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	resp := response{}
+	err = decoder.Decode(&resp)
+	if err != nil {
+		RespondWithError(w, 500, err.Error())
+		return
+	}
+
+	uid, err := auth.ValidateJWT(token, secret)
+	if err != nil {
+		RespondWithError(w, 401, err.Error())
+		return
+	}
+	newPw, err := auth.HashPassword(resp.Password)
+	if err != nil {
+		RespondWithError(w, 500, err.Error())
+		return
+	}
+	refreshToken, err := apiCfg.Config.DB.GetRefreshTokenFromUser(r.Context(), uid)
+	if err != nil {
+		RespondWithError(w, 500, err.Error())
+		return
+	}
+
+	updateParams := database.UpdateUserParams{
+		ID:             uid,
+		Email:          resp.Email,
+		HashedPassword: newPw,
+	}
+	updatedUser, err := apiCfg.Config.DB.UpdateUser(r.Context(), updateParams)
+	if err != nil {
+		RespondWithError(w, 500, err.Error())
+		return
+	}
+
+	RespondWithJSON(w, 200, User{ID: updatedUser.ID, CreatedAt: updatedUser.CreatedAt, UpdatedAt: updatedUser.UpdatedAt, Email: updatedUser.Email, Token: token, RefreshToken: refreshToken.Token})
+}
+
 func (apiCfg *APIHandler) DeleteUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 	if apiCfg.Config.Platform == "dev" {

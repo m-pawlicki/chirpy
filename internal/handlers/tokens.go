@@ -9,7 +9,7 @@ import (
 	"github.com/m-pawlicki/chirpy/internal/auth"
 )
 
-func (apiCfg *APIHandler) RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
+func (apiCfg *APIHandler) RefreshAccessTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 	type response struct {
 		Token string `json:"token"`
@@ -27,7 +27,7 @@ func (apiCfg *APIHandler) RefreshTokenHandler(w http.ResponseWriter, r *http.Req
 		RespondWithError(w, 401, err.Error())
 		return
 	}
-	tkn, err := apiCfg.Config.DB.LookupRefToken(r.Context(), usr.Token)
+	tkn, err := apiCfg.Config.DB.LookupRefreshToken(r.Context(), usr.Token)
 	if err != nil {
 		RespondWithError(w, 401, err.Error())
 		return

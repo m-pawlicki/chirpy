@@ -44,6 +44,25 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 	return i, err
 }
 
+const getRefreshTokenFromUser = `-- name: GetRefreshTokenFromUser :one
+SELECT token, created_at, updated_at, user_id, expires_at, revoked_at FROM refresh_tokens
+WHERE user_id = $1
+`
+
+func (q *Queries) GetRefreshTokenFromUser(ctx context.Context, userID uuid.UUID) (RefreshToken, error) {
+	row := q.db.QueryRowContext(ctx, getRefreshTokenFromUser, userID)
+	var i RefreshToken
+	err := row.Scan(
+		&i.Token,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UserID,
+		&i.ExpiresAt,
+		&i.RevokedAt,
+	)
+	return i, err
+}
+
 const getUserFromRefreshToken = `-- name: GetUserFromRefreshToken :one
 SELECT id, users.created_at, users.updated_at, email, hashed_password, token, refresh_tokens.created_at, refresh_tokens.updated_at, user_id, expires_at, revoked_at FROM users
 INNER JOIN refresh_tokens
@@ -84,13 +103,13 @@ func (q *Queries) GetUserFromRefreshToken(ctx context.Context, token string) (Ge
 	return i, err
 }
 
-const lookupRefToken = `-- name: LookupRefToken :one
+const lookupRefreshToken = `-- name: LookupRefreshToken :one
 SELECT token, created_at, updated_at, user_id, expires_at, revoked_at FROM refresh_tokens
 WHERE token = $1
 `
 
-func (q *Queries) LookupRefToken(ctx context.Context, token string) (RefreshToken, error) {
-	row := q.db.QueryRowContext(ctx, lookupRefToken, token)
+func (q *Queries) LookupRefreshToken(ctx context.Context, token string) (RefreshToken, error) {
+	row := q.db.QueryRowContext(ctx, lookupRefreshToken, token)
 	var i RefreshToken
 	err := row.Scan(
 		&i.Token,

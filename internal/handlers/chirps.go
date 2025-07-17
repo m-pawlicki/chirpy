@@ -118,3 +118,7 @@ func validateChirp(body string) (string, bool) {
 
 	return cleanedBody, true
 }
+
+func (apiCfg *APIHandler) DeleteChirpHandler(w http.ResponseWriter, r *http.Request) {
+
+}

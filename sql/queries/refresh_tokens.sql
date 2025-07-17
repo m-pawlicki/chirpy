@@ -9,9 +9,13 @@ VALUES (
 )
 RETURNING *;
 
--- name: LookupRefToken :one
+-- name: LookupRefreshToken :one
 SELECT * FROM refresh_tokens
 WHERE token = $1;
+
+-- name: GetRefreshTokenFromUser :one
+SELECT * FROM refresh_tokens
+WHERE user_id = $1;
 
 -- name: GetUserFromRefreshToken :one
 SELECT * FROM users
