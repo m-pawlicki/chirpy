@@ -55,6 +55,9 @@ func main() {
 	mux.HandleFunc("POST /api/users", cfgHandlers.CreateUserHandler)
 	mux.HandleFunc("POST /api/login", cfgHandlers.LoginUserHandler)
 
+	mux.HandleFunc("POST /api/refresh", cfgHandlers.RefreshTokenHandler)
+	mux.HandleFunc("POST /api/revoke", cfgHandlers.RevokeTokenHandler)
+
 	appReqPath := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
 	mux.Handle("/app/", cfgMiddleware.MiddlewareMetricsInc(appReqPath))
 

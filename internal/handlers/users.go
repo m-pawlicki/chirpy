@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,11 +13,12 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Token     string    `json:"token"`
+	ID           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Email        string    `json:"email"`
+	Token        string    `json:"token"`
+	RefreshToken string    `json:"refresh_token"`
 }
 
 func (apiCfg *APIHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -57,11 +57,12 @@ func (apiCfg *APIHandler) CreateUserHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (apiCfg *APIHandler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
+
 	type response struct {
-		Password  string `json:"password"`
-		Email     string `json:"email"`
-		ExpiresIn string `json:"expires_in_seconds"`
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
+
 	godotenv.Load(".env")
 	secret := os.Getenv("SECRET")
 	decoder := json.NewDecoder(r.Body)
@@ -83,28 +84,26 @@ func (apiCfg *APIHandler) LoginUserHandler(w http.ResponseWriter, r *http.Reques
 		RespondWithError(w, 401, "Incorrect email or password")
 		return
 	}
-	var expiry time.Duration
-	if resp.ExpiresIn == "" {
-		expiry = time.Hour
-	} else {
-		conv, err := strconv.Atoi(resp.ExpiresIn)
-		if err != nil {
-			RespondWithError(w, 401, "Malformed expires_in_seconds")
-			return
-		}
-		if conv > 3600 {
-			expiry = time.Hour
 
-		} else {
-			expiry = (time.Second * time.Duration(conv))
-		}
-	}
-	token, err := auth.MakeJWT(usr.ID, secret, expiry)
+	token, err := auth.MakeJWT(usr.ID, secret)
 	if err != nil {
-		RespondWithError(w, 401, "Authenication failure")
+		RespondWithError(w, 500, err.Error())
 		return
 	}
-	RespondWithJSON(w, 200, User{ID: usr.ID, CreatedAt: usr.CreatedAt, UpdatedAt: usr.UpdatedAt, Email: usr.Email, Token: token})
+
+	refresh, err := auth.MakeRefreshToken()
+	if err != nil {
+		RespondWithError(w, 500, err.Error())
+		return
+	}
+
+	rt, err := apiCfg.Config.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{Token: refresh, UserID: usr.ID})
+	if err != nil {
+		RespondWithError(w, 500, err.Error())
+		return
+	}
+
+	RespondWithJSON(w, 200, User{ID: usr.ID, CreatedAt: usr.CreatedAt, UpdatedAt: usr.UpdatedAt, Email: usr.Email, Token: token, RefreshToken: rt.Token})
 }
 
 func (apiCfg *APIHandler) DeleteUsersHandler(w http.ResponseWriter, r *http.Request) {
