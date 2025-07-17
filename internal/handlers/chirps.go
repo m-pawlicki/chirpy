@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -20,17 +21,47 @@ type Chirp struct {
 }
 
 func (apiCfg *APIHandler) GetChirpsHandler(w http.ResponseWriter, r *http.Request) {
-	chirps, err := apiCfg.Config.DB.GetChirps(r.Context())
-	if err != nil {
-		RespondWithError(w, 500, "Couldn't get chirps")
-		return
-	}
+	authorID := r.URL.Query().Get("author_id")
 	var chirpList []Chirp
-	for _, chirp := range chirps {
-		chirpList = append(chirpList,
-			Chirp{ID: chirp.ID, CreatedAt: chirp.CreatedAt, UpdatedAt: chirp.UpdatedAt, Body: chirp.Body, UserID: chirp.UserID})
+	if authorID != "" {
+		uid, err := uuid.Parse(authorID)
+		if err != nil {
+			RespondWithError(w, 401, "Couldn't parse author_id")
+			return
+		}
+		chirps, err := apiCfg.Config.DB.GetChirpsByAuthorID(r.Context(), uid)
+		if err != nil {
+			RespondWithError(w, 500, "Couldn't get chirps")
+		}
+		for _, chirp := range chirps {
+			chirpList = append(chirpList,
+				Chirp{ID: chirp.ID, CreatedAt: chirp.CreatedAt, UpdatedAt: chirp.UpdatedAt, Body: chirp.Body, UserID: chirp.UserID})
+		}
+	} else {
+		chirps, err := apiCfg.Config.DB.GetChirps(r.Context())
+		if err != nil {
+			RespondWithError(w, 500, "Couldn't get chirps")
+			return
+		}
+		for _, chirp := range chirps {
+			chirpList = append(chirpList,
+				Chirp{ID: chirp.ID, CreatedAt: chirp.CreatedAt, UpdatedAt: chirp.UpdatedAt, Body: chirp.Body, UserID: chirp.UserID})
+		}
 	}
-	RespondWithJSON(w, 200, chirpList)
+	sortBy := r.URL.Query().Get("sort")
+	switch sortBy {
+	case "asc":
+		RespondWithJSON(w, 200, chirpList)
+		return
+	case "desc":
+		sort.Slice(chirpList, func(i, j int) bool {
+			return chirpList[i].CreatedAt.After(chirpList[j].CreatedAt)
+		})
+		RespondWithJSON(w, 200, chirpList)
+		return
+	default:
+		RespondWithJSON(w, 200, chirpList)
+	}
 }
 
 func (apiCfg *APIHandler) GetChirpByIDHandler(w http.ResponseWriter, r *http.Request) {
