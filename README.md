@@ -1,5 +1,5 @@
 # Chirpy
-Twitter-clone that allows for user and "chirp" CRUD operations using JWT authentication. Has RESTful API.
+RESTful API for a Twitter-clone to manage users and "chirps". Has JWT authentication.
 Uses Postgres for database management and Goose for migrations.
 
 # Usage
